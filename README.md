@@ -8,6 +8,21 @@
 ## Project Description / Problem Statement
 Traditional blacklist-based security systems can't catch newly created (zero-day) malicious URLs, since they only block links that are already known to be bad. This project detects and classifies URLs in real time — as Benign, Phishing, Malware, or Suspicious — by analyzing the URL's structure, host, and domain information together with live threat intelligence, instead of relying on the URL having been seen before.
 
+## Architecture
+
+```mermaid
+flowchart TD
+    U["User"] -->|submits URL| FE["Frontend Dashboard"]
+    FE -->|POST /api/v1/analyze| API["FastAPI Backend"]
+    API --> FEAT["Feature Extraction"]
+    API --> TI["Threat Intelligence\n(VirusTotal / AbuseIPDB)"]
+    FEAT --> ML["ML Classification\n(Scikit-learn / XGBoost)"]
+    ML --> API
+    TI --> API
+    API --> DB[("PostgreSQL")]
+    API -->|verdict + risk score| FE
+```
+
 ## Objectives
 - Dataset collection
 - Feature extraction
