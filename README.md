@@ -153,13 +153,6 @@ gantt
     Analytics + export        : fe3, 2026-10-26, 2027-03-10
 ```
 
-## 📈 Current Progress
-
-### Week 1
-- Built FastAPI backend skeleton (routing, environment config, CORS, health check)
-- Assembled benign and malicious URL datasets
-- Built dataset ingestion scripts
-
 ## 🚀 Setup Instructions
 
 ```bash
