@@ -16,33 +16,33 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 # -------------------------------------------------------------
 # CONFIGURATION: Institution & Department Details
 # -------------------------------------------------------------
-Workflow to generate weekly report from GitHub
-
-To launch and enter a GitHub Codespace for your repository:
-1.	Open the repository on GitHub in your browser.
-2.	Click the green <> Code button near the top right.
-3.	Switch from the Local tab to the Codespaces tab.
-4.	Click Create codespace on main (or click an existing Codespace listed there to resume it).
-5.	The full VS Code environment with a built-in terminal will load directly in your browser.
-
-Create the Python Script File
-1.	Create New File text file
-2.	Name the file: generate_report.py
-3.	Paste the complete reporting script code into this file and save it 
-Content inside: generate_report.py
-import subprocess
-from collections import defaultdict
-import datetime
-import io
-import os
-import sys
-import html
-import matplotlib.pyplot as plt
-
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, KeepTogether
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+# Workflow to generate weekly report from GitHub
+#
+# To launch and enter a GitHub Codespace for your repository:
+# 1. Open the repository on GitHub in your browser.
+# 2. Click the green <> Code button near the top right.
+# 3. Switch from the Local tab to the Codespaces tab.
+# 4. Click Create codespace on main (or click an existing Codespace listed there to resume it).
+# 5. The full VS Code environment with a built-in terminal will load directly in your browser.
+#
+# Create the Python Script File
+# 1. Create New File text file
+# 2. Name the file: generate_report.py
+# 3. Paste the complete reporting script code into this file and save it
+# Content inside: generate_report.py
+# import subprocess
+# from collections import defaultdict
+# import datetime
+# import io
+# import os
+# import sys
+# import html
+# import matplotlib.pyplot as plt
+#
+# from reportlab.lib.pagesizes import letter
+# from reportlab.lib import colors
+# from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, KeepTogether
+# from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 # -------------------------------------------------------------
 # CONFIGURATION: Institution & Department Details
 # -------------------------------------------------------------
