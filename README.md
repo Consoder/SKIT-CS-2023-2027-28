@@ -14,7 +14,7 @@
 
 **Project ID** `SKIT/AI/2023-2027/07` &nbsp;·&nbsp; **Branch** CSE &nbsp;·&nbsp; **Session** 2026–27 &nbsp;·&nbsp; **Eval** Research Paper Publication
 
-[Problem](#-problem-statement) · [What We're Building](#-what-were-building) · [Architecture](#-high-level-architecture) · [Request Flow](#-request-flow) · [Data Model](#-data-model-proposed) · [Timeline](#-sprint-timeline) · [Stack](#-technology-stack) · [Team](#-team) · [PRD](PRD.md) · [Progress](PROGRESS.md)
+[Problem](#-problem-statement) · [What We're Building](#-what-were-building) · [Architecture](#-high-level-architecture) · [Request Flow](#-request-flow) · [Data Model](#-data-model-proposed) · [Timeline](#-sprint-timeline) · [Stack](#-technology-stack) · [Team](#-team)
 
 </div>
 
@@ -197,8 +197,6 @@ gantt
     UI polish + demo prep          :         fe8, 2027-02-11, 2027-03-10
 ```
 
-Live status with notes lives in **[PROGRESS.md](PROGRESS.md)**.
-
 ---
 
 ## 🧰 Technology Stack
@@ -221,9 +219,7 @@ FinalYearProject/
 ├── backend/     FastAPI orchestration    — Kartik (Sprint 3 & 6)
 ├── ml/          Feature eng + training   — Ishanvi (Sprint 1 & 4)
 ├── docs/        Diagrams, research notes
-├── README.md    ← this file
-├── PRD.md       Product requirements
-└── PROGRESS.md  Live sprint/task tracker
+└── README.md    ← this file
 ```
 
 Each of `frontend/`, `backend/`, `ml/` has its own `README.md` with setup steps for that layer.
@@ -258,11 +254,3 @@ cd frontend && npm install && npm run dev
 ```
 
 Full Docker Compose orchestration lands with the Sprint 6 deployment task.
-
----
-
-<div align="center">
-
-📄 Full requirements → **[PRD.md](PRD.md)** &nbsp;·&nbsp; 📊 Live status → **[PROGRESS.md](PROGRESS.md)**
-
-</div>
