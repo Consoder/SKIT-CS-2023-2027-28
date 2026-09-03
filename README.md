@@ -104,31 +104,6 @@ erDiagram
 
 ---
 
-## 🎯 Objectives
-- Dataset collection
-- Feature extraction
-- ML model training
-- Detection system
-
-## 🧰 Tech Stack
-
-| Layer | Stack |
-|---|---|
-| Frontend | React.js, Tailwind CSS, Chart.js |
-| Backend | Python, FastAPI, Pydantic, Uvicorn |
-| ML | Scikit-learn, XGBoost, Pandas, NumPy |
-| Threat Intel | WHOIS/DNS, VirusTotal, AbuseIPDB |
-| Data | PostgreSQL |
-
-## 📂 Repository Structure
-
-```
-backend/
-ml/
-docs/
-weekly_reports/
-```
-
 ## 📅 Timeline
 
 ```mermaid
