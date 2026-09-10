@@ -10,6 +10,7 @@ import {
   Box,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { analyzeUrl } from '../api/urlApi';
 import Button from '../components/Button';
 import Card from '../components/Card';
@@ -51,11 +52,13 @@ const STATS = [
 ];
 
 // Home page: URL analysis portal. Matches Week 1 mockup — hero + search bar,
-// feature highlights, and platform stats. Wiring to the real backend (and the
-// Analysis Results Dashboard it should navigate to) lands in a later week.
+// feature highlights, and platform stats. On success, navigates to the
+// Analysis Results Dashboard; full backend wiring lands once /url/analyze
+// is implemented (until then this call errors and is just logged).
 export default function Home() {
   const [url, setUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -63,8 +66,8 @@ export default function Home() {
 
     setIsSubmitting(true);
     try {
-      await analyzeUrl(url);
-      // TODO: navigate to the Analysis Results Dashboard once it exists.
+      const result = await analyzeUrl(url);
+      navigate('/results', { state: { result } });
     } catch (error) {
       console.error('URL analysis failed:', error);
     } finally {
