@@ -41,10 +41,34 @@ pytest -q
 Covers URL validation edge cases (including malformed bracket sequences that
 crash Python's stdlib `urlparse`) and label normalization — no network needed.
 
+## Sprint 1.2 — Feature Extraction Complete ✅
+
+`src/features.py` extracts 31 lexical, host-based, and length-based features from each URL:
+
+**Lexical Features:**
+- URL length, entropy, character ratios (digits/letters/special)
+- Character counts: hyphens, dots, @, /, ?, _, ;
+
+**Host-Based Features:**
+- IP address detection, subdomain depth
+- Suspicious TLDs (tk, ml, ga, cf, etc.), shortener detection
+- Protocol analysis (http/https), port presence, unusual ports
+
+**Content & Obfuscation Detection:**
+- Query strings, fragments, percent encoding, Unicode
+- Double slashes, double dots, @ symbol tricks
+
+**Output:** `urls_with_features.csv` (410,457 rows × 32 cols, 73.44 MB)
+- No missing values (0 NaN)
+- Label: benign (344,800) / malicious (65,657)
+- All features normalized and validated
+
+**Tests:** 13/13 pass (feature extraction + edge cases)
+
 ## Roadmap (per project sprint plan)
 
 - [x] Sprint 1.1 — benign/malicious URL dataset ingestion
-- [ ] Sprint 1.2 — lexical & host-based feature extraction (due 30-09-2026)
+- [x] Sprint 1.2 — lexical & host-based feature extraction (✅ 03-09-2026)
 - [ ] Sprint 1.3 — domain/content features via WHOIS/DNS enrichment (due 25-10-2026)
 - [ ] Sprint 1.4 — ML-ready feature schema + preprocessing pipeline (due 20-11-2026)
 - [ ] Sprint 4.1 — baseline Scikit-Learn classifiers (due 15-12-2026)
