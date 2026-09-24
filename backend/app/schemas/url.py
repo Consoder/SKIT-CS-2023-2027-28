@@ -44,6 +44,14 @@ def _is_valid_hostname(hostname: str) -> bool:
 # instead of being correctly rejected for using a disallowed scheme.
 _SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
 
+# Real bug found 2026-09-24: .strip() only removes LEADING/TRAILING
+# whitespace, not characters embedded in the middle of the string - so
+# "http://example.com/\npath" passed straight through with a raw newline
+# still inside it. If this string is ever written into a raw HTTP header
+# or a log line downstream, an embedded \r\n is exactly what CRLF/header/
+# log injection needs. Reject control characters anywhere in the URL.
+_CONTROL_CHAR_RE = re.compile(r"[\x00-\x1f\x7f]")
+
 
 class URLAnalysisRequest(BaseModel):
     url: str = Field(max_length=MAX_URL_LENGTH)
@@ -54,6 +62,9 @@ class URLAnalysisRequest(BaseModel):
         candidate = value.strip()
         if not candidate:
             raise ValueError("url must not be empty")
+
+        if _CONTROL_CHAR_RE.search(candidate):
+            raise ValueError("url must not contain control characters")
 
         if not _SCHEME_RE.match(candidate):
             candidate = f"http://{candidate}"
@@ -68,6 +79,16 @@ class URLAnalysisRequest(BaseModel):
 
         if parsed.scheme not in ("http", "https"):
             raise ValueError("url scheme must be http or https")
+
+        # Real bug found 2026-09-24: the port was never actually checked -
+        # "http://example.com:99999/" and "http://example.com:-1/" both
+        # passed straight through. urlparse's own .port property already
+        # raises ValueError for exactly these cases (out of the 0-65535
+        # range, or not a number) - it just needed to actually be accessed.
+        try:
+            parsed.port
+        except ValueError as exc:
+            raise ValueError(f"malformed url: {exc}") from exc
 
         # Bug found and fixed 2026-09-14: without this, a plain string like
         # "not a url" silently passed validation - urlparse happily accepts

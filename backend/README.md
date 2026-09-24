@@ -23,6 +23,8 @@ app/
 tests/
   test_health.py
   test_url_schema.py
+  test_url_schema_control_chars.py
+  test_url_schema_port.py
   test_analysis_schema.py
   test_error_handling.py
 ```
@@ -42,6 +44,19 @@ back in one consistent JSON shape and never leaks a raw stack trace to the
 client. `DEBUG` now defaults to `False` for the same reason: a debug-mode
 default previously bypassed this handling entirely on any unhandled
 exception (found via edge-case testing 2026-09-14, fixed here).
+
+Two more real gaps found and fixed (2026-09-24), still within `url.py`'s
+own validation scope:
+- **Embedded control characters were accepted.** `.strip()` only trims
+  leading/trailing whitespace, so `"http://example.com/\npath"` passed
+  straight through with the newline still embedded in the middle - a real
+  CRLF/header/log-injection risk if that string ever reaches a raw HTTP
+  header or log line downstream. Now rejected via an explicit control-
+  character check.
+- **Port was never actually validated.** `http://example.com:99999/`
+  (above the valid 0-65535 TCP range) and `:-1` both passed. `urlparse`'s
+  own `.port` property already raises `ValueError` for exactly these
+  cases - it just needed to be accessed at all, which it wasn't.
 
 ## Local setup
 
