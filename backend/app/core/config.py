@@ -9,7 +9,12 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str = "URL Threat Detection API"
     ENVIRONMENT: str = "development"  # development | staging | production
-    DEBUG: bool = True
+    # Real bug found via adversarial testing 2026-09-14: DEBUG=True as the
+    # DEFAULT meant any unhandled exception got rendered as a raw Python
+    # traceback straight to the client, bypassing the structured error
+    # handling in core/errors.py entirely. Defaults to False now - opt into
+    # it explicitly per environment, never ship it as the fallback.
+    DEBUG: bool = False
     API_V1_PREFIX: str = "/api/v1"
     LOG_LEVEL: str = "INFO"
 
