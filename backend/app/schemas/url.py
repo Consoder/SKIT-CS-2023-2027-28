@@ -80,6 +80,16 @@ class URLAnalysisRequest(BaseModel):
         if parsed.scheme not in ("http", "https"):
             raise ValueError("url scheme must be http or https")
 
+        # Real bug found 2026-09-24: the port was never actually checked -
+        # "http://example.com:99999/" and "http://example.com:-1/" both
+        # passed straight through. urlparse's own .port property already
+        # raises ValueError for exactly these cases (out of the 0-65535
+        # range, or not a number) - it just needed to actually be accessed.
+        try:
+            parsed.port
+        except ValueError as exc:
+            raise ValueError(f"malformed url: {exc}") from exc
+
         # Bug found and fixed 2026-09-14: without this, a plain string like
         # "not a url" silently passed validation - urlparse happily accepts
         # whitespace inside a netloc with no path segment, so the earlier
