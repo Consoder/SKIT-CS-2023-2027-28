@@ -16,6 +16,7 @@ import Button from '../components/Button';
 import Card from '../components/Card';
 import Input from '../components/Input';
 import Layout from '../components/Layout';
+import { validateUrl } from '../lib/validateUrl';
 
 const FEATURES = [
   {
@@ -57,12 +58,16 @@ const STATS = [
 // is implemented (until then this call errors and is just logged).
 export default function Home() {
   const [url, setUrl] = useState('');
+  const [touched, setTouched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
+  const validationError = validateUrl(url);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!url.trim()) return;
+    setTouched(true);
+    if (validationError) return;
 
     setIsSubmitting(true);
     try {
@@ -97,11 +102,17 @@ export default function Home() {
                 type="text"
                 value={url}
                 onChange={(event) => setUrl(event.target.value)}
+                onBlur={() => setTouched(true)}
                 placeholder="Enter URL to analyze (e.g., https://example.com)"
                 className="py-3"
+                error={touched ? validationError : null}
               />
             </div>
-            <Button type="submit" disabled={isSubmitting} className="sm:px-6">
+            <Button
+              type="submit"
+              disabled={isSubmitting || (touched && Boolean(validationError))}
+              className="sm:px-6"
+            >
               <Search className="h-4 w-4" />
               {isSubmitting ? 'Analyzing...' : 'Analyze URL'}
             </Button>
