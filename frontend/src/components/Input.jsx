@@ -1,7 +1,17 @@
 // Styled text input with an optional label and an optional leading icon
 // (pass a lucide-react component, e.g. `icon={Globe}`). `id` connects the
 // label to the input for accessibility, so pass one whenever `label` is used.
-export default function Input({ label, id, icon: Icon, type = 'text', className = '', ...props }) {
+// Pass `error` (a message string) to switch the border red and show the
+// message below the input; `aria-invalid` is set automatically.
+export default function Input({
+  label,
+  id,
+  icon: Icon,
+  type = 'text',
+  className = '',
+  error,
+  ...props
+}) {
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
@@ -16,10 +26,16 @@ export default function Input({ label, id, icon: Icon, type = 'text', className 
         <input
           id={id}
           type={type}
-          className={`w-full rounded-lg border border-slate-300 bg-white py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${Icon ? 'pl-11 pr-4' : 'px-4'} ${className}`}
+          aria-invalid={Boolean(error)}
+          className={`w-full rounded-lg border bg-white py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 ${
+            error
+              ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30'
+              : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/30'
+          } ${Icon ? 'pl-11 pr-4' : 'px-4'} ${className}`}
           {...props}
         />
       </div>
+      {error && <p className="text-sm text-red-400">{error}</p>}
     </div>
   );
 }
