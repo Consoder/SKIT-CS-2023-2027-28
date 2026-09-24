@@ -66,3 +66,48 @@ BOOLEAN_FEATURES = [
     "resolves_to_private_ip",
 ]
 
+def load_data(filepath: str | Path) -> pd.DataFrame:
+    """Load enriched dataset."""
+    logger.info("Loading data from %s", filepath)
+    df = pd.read_csv(filepath)
+    logger.info("Loaded %d rows, %d columns", len(df), len(df.columns))
+    return df
+
+def handle_missing_values(df: pd.DataFrame, strategy: str = "drop") -> pd.DataFrame:
+    """Handle missing values in features."""
+    df = df.copy()
+    missing = df.isnull().sum()
+    if missing.sum() > 0:
+        logger.info("Missing values found:\n%s", missing[missing > 0])
+        if strategy == "drop":
+            before = len(df)
+            df = df.dropna()
+            logger.info("Dropped %d rows with missing values", before - len(df))
+        elif strategy == "mean":
+            for col in NUMERIC_FEATURES:
+                if col in df.columns and df[col].isnull().any():
+                    df[col].fillna(df[col].mean(), inplace=True)
+        elif strategy == "median":
+            for col in NUMERIC_FEATURES:
+                if col in df.columns and df[col].isnull().any():
+                    df[col].fillna(df[col].median(), inplace=True)
+    return df
+
+def encode_categorical_features(
+    df: pd.DataFrame, fit_encoders: bool = True
+) -> tuple[pd.DataFrame, dict]:
+    """Encode categorical features using label encoding."""
+    df = df.copy()
+    encoders = {}
+    for col in CATEGORICAL_FEATURES:
+        if col not in df.columns:
+            continue
+        if fit_encoders:
+            encoder = LabelEncoder()
+            df[f"{col}_encoded"] = encoder.fit_transform(df[col].astype(str))
+            encoders[col] = encoder
+            logger.info("Encoded %s: %d unique values", col, len(encoder.classes_))
+        else:
+            if col in encoders:
+                df[f"{col}_encoded"] = encoders[col].transform(df[col].astype(str))
+    return df, encoders
