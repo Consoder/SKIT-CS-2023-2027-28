@@ -44,6 +44,14 @@ def _is_valid_hostname(hostname: str) -> bool:
 # instead of being correctly rejected for using a disallowed scheme.
 _SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
 
+# Real bug found 2026-09-24: .strip() only removes LEADING/TRAILING
+# whitespace, not characters embedded in the middle of the string - so
+# "http://example.com/\npath" passed straight through with a raw newline
+# still inside it. If this string is ever written into a raw HTTP header
+# or a log line downstream, an embedded \r\n is exactly what CRLF/header/
+# log injection needs. Reject control characters anywhere in the URL.
+_CONTROL_CHAR_RE = re.compile(r"[\x00-\x1f\x7f]")
+
 
 class URLAnalysisRequest(BaseModel):
     url: str = Field(max_length=MAX_URL_LENGTH)
@@ -54,6 +62,9 @@ class URLAnalysisRequest(BaseModel):
         candidate = value.strip()
         if not candidate:
             raise ValueError("url must not be empty")
+
+        if _CONTROL_CHAR_RE.search(candidate):
+            raise ValueError("url must not contain control characters")
 
         if not _SCHEME_RE.match(candidate):
             candidate = f"http://{candidate}"
