@@ -1,16 +1,49 @@
-# React + Vite
+# Frontend — URLShield AI
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + Vite + Tailwind dashboard for the "Identifying URL-Based Attacks using IP Data" project.
+Owner: Diya Garg (Sprints 2 & 5). Product requirements: [docs/FRONTEND_PRD.md](docs/FRONTEND_PRD.md).
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev        # http://localhost:5173
+npm test           # vitest
+npm run lint       # oxlint
+npm run build
+```
 
-## React Compiler
+By default the app runs in **Demo mode**: URL features are computed in the browser, and the verdict and threat intel are
+simulated (always labelled as such), so every screen works before the backend's `/analyze` exists.
+Switch to **Settings → Live API** to use FastAPI (`uvicorn app.main:app --reload` in `backend/`).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Copy `.env.example` to `.env.local` to change the defaults.
 
-## Expanding the Oxlint configuration
+## Screens
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+| Route | Screen |
+|---|---|
+| `/` | Landing page + scanner |
+| `/dashboard` | KPIs, trends, verdict and risk breakdowns, recent scans |
+| `/scan` | Single and bulk scan (`?tab=bulk`) |
+| `/results/:id` | Verdict, risk gauge, signals, features, IP/DNS, WHOIS/SSL, threat intel, audit record |
+| `/history` | Search, filter, export, delete |
+| `/reports` | Printable report, CSV / JSON / PDF |
+| `/intel` | Hosting hotspots, IOC blocklist |
+| `/audit` | SHA-256 hash-chain log, verification, tamper demo |
+| `/api` | Request/response contract for the backend |
+| `/settings` | Engine mode, API URL, health check, data |
+
+## Structure
+
+```
+src/
+  api/          axios client + analyzeUrl / checkHealth (demo or live)
+  components/   UI primitives, layouts, scan form, charts
+  config/       brand + verdict / risk-level definitions
+  hooks/        useScanner (pipeline progress)
+  lib/          validateUrl, features (port of ml/src/features.py), demoEngine,
+                normalize, ledger (hash chain), analytics, exporters, storage
+  pages/        one file per route
+  store/        AppStoreProvider (history, audit chain, settings → localStorage)
+```
