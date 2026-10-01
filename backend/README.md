@@ -20,6 +20,8 @@ app/
   schemas/
     url.py             # request-side URL validation (Sprint 3, Task 2)
     analysis.py         # response-side schema for scan results
+  services/
+    orchestrator.py     # feature extraction + threat intel + classification (Sprint 3, Task 3)
 tests/
   test_health.py
   test_url_schema.py
@@ -27,6 +29,7 @@ tests/
   test_url_schema_port.py
   test_analysis_schema.py
   test_error_handling.py
+  test_orchestrator.py
 ```
 
 ## Validation & error handling notes (Sprint 3, Task 2)
@@ -58,6 +61,33 @@ own validation scope:
   own `.port` property already raises `ValueError` for exactly these
   cases - it just needed to be accessed at all, which it wasn't.
 
+## Orchestration service (Sprint 3, Task 3)
+
+`app/services/orchestrator.py` coordinates feature extraction,
+threat-intelligence and classification behind one `AnalysisOrchestrator.
+analyze()` call. Each stage is a small `Protocol` (`FeatureExtractor`,
+`ThreatIntelClient`, `Classifier`) with a placeholder implementation for
+now:
+
+- `PlaceholderFeatureExtractor` — lexical checks only (URL length,
+  IPv4/IPv6-literal host, subdomain count, userinfo-disguise, punycode
+  homograph detection).
+- `PlaceholderThreatIntelClient` — always reports "unknown"; replaced by
+  the real VirusTotal/AbuseIPDB client in Sprint 6, Task 1.
+- `PlaceholderClassifier` — heuristic rules over the extracted features,
+  already reading the `virustotal`/`abuseipdb` keys the real threat-intel
+  client will populate later, so that swap needs no change here.
+
+Deliberately out of scope for this task (each is its own later sprint,
+and would be premature against placeholder dependencies that can't
+actually hang or need caching): the real ML model (Sprint 4), the real
+threat-intel client's per-provider timeout (Sprint 6, Task 1), the Redis
+cache (Sprint 6, Task 2), and DB persistence (Sprint 6, Task 3).
+
+`get_default_orchestrator()` wires the placeholders today; later sprints
+swap in the real dependencies there without changing `analyze()`'s call
+sites.
+
 ## Local setup
 
 ```bash
@@ -81,7 +111,7 @@ pytest -q
 
 - [x] Sprint 3.1 — FastAPI skeleton, config, CORS, base routing
 - [x] Sprint 3.2 — URL validation & request/response schemas (due 30-09-2026)
-- [ ] Sprint 3.3 — Orchestration service (due 25-10-2026)
+- [x] Sprint 3.3 — Orchestration service (due 25-10-2026)
 - [ ] Sprint 3.4 — Unified `/analyze` endpoint + integration tests (due 20-11-2026)
 - [ ] Sprint 6.1 — VirusTotal / AbuseIPDB integration (due 15-12-2026)
 - [ ] Sprint 6.2 — Redis caching layer (due 15-01-2027)
