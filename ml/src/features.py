@@ -188,3 +188,64 @@ def extract_host_features(url: str) -> HostFeatures | None:
         subdomain_count = max(0, len(parts) - 2)
 
     has_numeric = any(char.isdigit() for char in domain)
+
+    return HostFeatures(
+        is_ipv4=False,
+        is_ipv6=False,
+        second_level_domain=sld,
+        top_level_domain=tld,
+        subdomain_count=subdomain_count,
+        has_numeric_domain=has_numeric,
+    )
+
+
+def extract_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Extract all lexical and host-based features from URL column.
+
+    Args:
+        df: DataFrame with at least a 'url' column.
+
+    Returns:
+        DataFrame with original columns + extracted features.
+    """
+    if "url" not in df.columns:
+        raise ValueError("DataFrame must have a 'url' column")
+
+    df = df.copy()
+
+    url_features_list = []
+    for url in df["url"]:
+        features = extract_url_features(url)
+        url_features_list.append(features)
+
+    host_features_list = []
+    for url in df["url"]:
+        features = extract_host_features(url)
+        host_features_list.append(features)
+
+    url_df = pd.DataFrame(url_features_list)
+    host_df = pd.DataFrame(host_features_list)
+
+    result = pd.concat([df, url_df, host_df], axis=1)
+    return result
+
+
+if __name__ == "__main__":
+    from pathlib import Path
+
+    processed_dir = Path(__file__).resolve().parent.parent / "data" / "processed"
+    input_file = processed_dir / "urls_dataset.csv"
+    output_file = processed_dir / "urls_with_features.csv"
+
+    print(f"Loading {input_file}...")
+    df = pd.read_csv(input_file)
+    print(f"Loaded {len(df)} rows")
+
+    print("Extracting features...")
+    df_with_features = extract_features(df)
+
+    print(f"Writing to {output_file}...")
+    df_with_features.to_csv(output_file, index=False)
+    print(f"Done. {len(df_with_features.columns)} total columns")
+    print(f"\nFeature columns: {[c for c in df_with_features.columns if c not in df.columns]}")
