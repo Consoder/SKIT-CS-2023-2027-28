@@ -90,3 +90,101 @@ _COMPOUND_TLDS = {
 }
 
 
+def _extract_tld(domain: str) -> str:
+    if _extract_ipv4(domain) or _extract_ipv6(domain):
+        return ""
+
+    parts = domain.split(".")
+    if len(parts) >= 3 and ".".join(parts[-2:]) in _COMPOUND_TLDS:
+        return ".".join(parts[-2:])
+    if len(parts) >= 2:
+        return parts[-1].lower()
+    return ""
+
+
+def extract_url_features(url: str) -> URLFeatures | None:
+    if not url or not isinstance(url, str):
+        return None
+
+    try:
+        parsed = urlparse(url if "://" in url else f"http://{url}")
+    except Exception:
+        return None
+
+    if not parsed.netloc:
+        return None
+
+    domain = parsed.netloc.lower()
+    path = parsed.path or ""
+    query = parsed.query or ""
+    fragment = parsed.fragment or ""
+
+    num_query_params = len(query.split("&")) if query else 0
+    num_subdomains = domain.count(".") - (1 if not _extract_ipv4(domain) else 0)
+
+    suspicious_chars = r"[<>\"'%;()&+]"
+    has_suspicious = bool(re.search(suspicious_chars, url))
+
+    tld = _extract_tld(domain)
+
+    return URLFeatures(
+        url_length=len(url),
+        domain_length=len(domain),
+        path_length=len(path),
+        query_length=len(query),
+        fragment_length=len(fragment),
+        num_dots=url.count("."),
+        num_hyphens=url.count("-"),
+        num_underscores=url.count("_"),
+        num_slashes=url.count("/"),
+        num_query_params=num_query_params,
+        num_subdomains=max(0, num_subdomains),
+        has_ip_address=_extract_ipv4(domain) or _extract_ipv6(domain),
+        has_http=parsed.scheme == "http",
+        has_https=parsed.scheme == "https",
+        has_suspicious_chars=has_suspicious,
+        domain_entropy=_entropy(domain),
+        url_entropy=_entropy(url),
+        tld=tld,
+    )
+
+
+def extract_host_features(url: str) -> HostFeatures | None:
+    if not url or not isinstance(url, str):
+        return None
+
+    try:
+        parsed = urlparse(url if "://" in url else f"http://{url}")
+    except Exception:
+        return None
+
+    if not parsed.netloc:
+        return None
+
+    domain = parsed.netloc.lower()
+    is_ipv4 = _extract_ipv4(domain)
+    is_ipv6 = _extract_ipv6(domain)
+
+    if is_ipv4 or is_ipv6:
+        return HostFeatures(
+            is_ipv4=is_ipv4,
+            is_ipv6=is_ipv6,
+            second_level_domain="",
+            top_level_domain="",
+            subdomain_count=0,
+            has_numeric_domain=True,
+        )
+
+    parts = domain.split(".")
+    if len(parts) >= 3 and ".".join(parts[-2:]) in _COMPOUND_TLDS:
+        # "mail.google.co.uk" - the real registrable domain is
+        # "google.co.uk", not "co.uk" with "mail"+"google" as subdomains.
+        tld = ".".join(parts[-2:])
+        sld = parts[-3] if len(parts) >= 3 else ""
+        subdomain_count = max(0, len(parts) - 3)
+    else:
+        tld = parts[-1] if parts else ""
+        sld = parts[-2] if len(parts) >= 2 else ""
+        subdomain_count = max(0, len(parts) - 2)
+
+    has_numeric = any(char.isdigit() for char in domain)
