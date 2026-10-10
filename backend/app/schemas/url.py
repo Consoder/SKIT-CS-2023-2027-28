@@ -11,9 +11,11 @@ from urllib.parse import urlparse
 from pydantic import BaseModel, Field, field_validator
 
 # Real bug found via adversarial testing 2026-09-14: a 100k+ character URL
-# passed validation fine, then crashed downstream with a raw exception when
-# the URL is eventually handed off to an HTTP client. Rejecting unreasonable
-# length here, at the boundary, is the first line of defense.
+# passed validation fine, then crashed downstream with httpx.InvalidURL
+# ("URL too long") when base64-encoded for the VirusTotal API call - an
+# exception type our retry logic didn't catch (see threat_intel.py fix).
+# Rejecting unreasonable length here, at the boundary, is the first line
+# of defense; the downstream fix is the second.
 MAX_URL_LENGTH = 2048
 
 # Matches a valid domain label sequence (example.com, sub.example.co.uk,

@@ -1,3 +1,8 @@
+"""
+Sprint 3, Task 1 (FastAPI skeleton, routing & config — due 05-09-2026):
+stdout logging setup shared by every backend module.
+"""
+
 import logging
 import sys
 
