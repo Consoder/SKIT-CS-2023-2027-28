@@ -1,0 +1,48 @@
+# Sprint 6, Task 4 (Docker + CI/CD — due 10-03-2027).
+# Full local stack: backend + Redis (Sprint 6.2) + PostgreSQL (Sprint 6.3).
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/url_threat_detection
+      # TLS - optional, unset by default (plain HTTP, same as before). Set
+      # these two and uncomment the volume mount below to have Uvicorn
+      # itself terminate TLS. See scripts/generate_dev_cert.py for a local
+      # dev cert; a real deployment needs a CA-issued one for a real domain.
+      # SSL_KEYFILE: /certs/dev-key.pem
+      # SSL_CERTFILE: /certs/dev-cert.pem
+    volumes:
+      # Real gap found via extended DB-outage testing 2026-09-25: the
+      # dead-letter file (orchestrator.py's DEAD_LETTER_PATH, the safety
+      # net that's supposed to survive a DB outage) lived on the
+      # container's own ephemeral filesystem with no volume - a container
+      # restart during that exact outage would have silently discarded any
+      # not-yet-replayed records the dead-letter log existed to protect.
+      - backend_data:/app/data
+      # - ./certs:/certs:ro
+    depends_on:
+      - redis
+      - postgres
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: url_threat_detection
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+  backend_data:

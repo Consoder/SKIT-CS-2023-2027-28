@@ -1,9 +1,43 @@
-fastapi==0.115.6
+fastapi==0.141.1
 uvicorn[standard]==0.32.1
 pydantic==2.10.3
 pydantic-settings==2.6.1
+redis==5.2.1
+slowapi==0.1.10
+sqlalchemy==2.0.36
+asyncpg==0.30.0
+greenlet==3.1.1
+# Real gap found 2026-09-14, closed 2026-09-25: the schema existed but had
+# no versioned migrations - see "Database migrations" in README.md.
+alembic==1.14.0
+
+# Real gap found 2026-09-25, closed 2026-09-25: auth was a single shared
+# API key, not real per-user accounts - see "User authentication" in
+# README.md. bcrypt used directly (not via passlib) since passlib's bcrypt
+# backend has known version-detection issues with bcrypt>=4.
+pyjwt==2.10.1
+bcrypt==4.2.1
+email-validator==2.3.0
+
+# Sprint 4 (ML integration, done ahead of schedule 2026-09-25): loads the
+# real trained model (app/ml_models/) for MLClassifier. Pinned to 1.9.0
+# specifically (not an older version) because that's what the model was
+# actually pickled with - see ml/requirements.txt for the same lesson
+# learned the hard way there. Also has a real Windows/Python 3.13 wheel,
+# unlike 1.5.0 which needs a C compiler to build from source.
+scikit-learn==1.9.0
+xgboost==3.2.0
+lightgbm==4.5.0
+pandas==2.2.3
 
 # testing
 pytest==8.3.4
 pytest-asyncio==0.24.0
 httpx==0.28.1
+aiosqlite==0.20.0
+
+# Sprint 6, Task 4 (blockchain audit logging) - see requirements-blockchain.txt.
+# Kept separate on purpose: web3's own declared dependency constraints have
+# no installable wheel on Windows/Python 3.13 without MSVC build tools, so
+# it cannot be resolved together with the packages above in one pip pass.
+# See backend/README.md "Blockchain setup" for the exact install command.

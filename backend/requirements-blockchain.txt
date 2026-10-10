@@ -1,0 +1,29 @@
+# Sprint 6, Task 4 (blockchain audit logging — due 10-03-2027).
+#
+# MUST be installed with --no-deps, as a SEPARATE step after requirements.txt:
+#     pip install -r requirements.txt
+#     pip install --no-deps -r requirements-blockchain.txt
+#
+# Why: web3==6.20.3 declares "ckzg<2", but no ckzg version below 2.0.0 has
+# ANY installable wheel for Windows/Python 3.13 - only a source
+# distribution requiring Microsoft C++ Build Tools to compile. The same is
+# true for web3's declared lru-dict range. The versions pinned below are
+# newer than what web3 declares, but install cleanly (real wheels exist)
+# and web3 works correctly against them in practice - confirmed with a
+# real deployed contract, a real mined transaction, and a real on-chain
+# read against a Ganache container, 2026-09-14. --no-deps is required
+# specifically to stop pip from rejecting this combination during
+# resolution; without it, pip refuses to install ckzg 2.x alongside web3.
+#
+# setuptools is pinned below 81 because newer setuptools removed
+# pkg_resources, which some of these packages still import.
+web3==6.20.3
+eth-account==0.14.0
+eth-typing==6.0.0
+eth-utils==6.0.0
+hexbytes==2.0.0
+lru-dict==1.4.1
+ckzg==2.1.8
+jsonschema==4.26.0
+protobuf==7.36.1
+setuptools==75.6.0

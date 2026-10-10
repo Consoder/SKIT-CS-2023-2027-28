@@ -1,0 +1,59 @@
+# Render deployment blueprint (prep done 2026-09-25, not deployed yet -
+# college project, no real domain, deliberately trying the free tier
+# first per user decision). Deploy by connecting this repo in Render's
+# dashboard ("New +" -> "Blueprint") and pointing it at backend/render.yaml.
+#
+# Free tier constraints checked live before writing this: the built image
+# is ~1.4GB (ML deps: sklearn/xgboost/lightgbm/pandas + two ~57MB model
+# files) - fine for Render (real containers, not serverless size limits).
+# RAM was the real question - tested locally with a hard 512MB cap
+# (matching free tier) and WEB_CONCURRENCY=1: real /analyze requests
+# through the actual ML model used ~350MB, comfortably under the limit but
+# without a lot of headroom for heavy concurrent load. If it OOMs under
+# real traffic, the fix is upgrading the plan below, not more code.
+#
+# Known gap carried over from local outage testing (2026-09-25): the
+# DB-outage dead-letter log (orchestrator.py's DEAD_LETTER_PATH,
+# data/db_dead_letter.jsonl) needs a persistent volume to survive a
+# restart during an outage - see docker-compose.yml's backend_data volume.
+# Render's free web services don't support persistent disks (paid feature
+# only), so on this plan that file stays ephemeral: a restart during a real
+# DB outage would lose any not-yet-replayed dead-letter records. Acceptable
+# for a free-tier demo, worth knowing before relying on it for real data.
+services:
+  - type: web
+    name: url-threat-detection-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: WEB_CONCURRENCY
+        value: "1" # free tier is single-CPU - more workers would each load their own copy of the model
+      - key: DEBUG
+        value: "false"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: url-threat-detection-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: url-threat-detection-cache
+          property: connectionString
+      - key: ANALYZE_RATE_LIMIT
+        value: "20/minute"
+      # Set these manually in Render's dashboard (never commit real
+      # values): VIRUSTOTAL_API_KEY, ABUSEIPDB_API_KEY, API_KEY,
+      # BACKEND_CORS_ORIGINS (the deployed frontend's real URL, e.g. a
+      # Vercel domain), BLOCKCHAIN_* if/when a real chain is wired up.
+
+  - type: redis
+    name: url-threat-detection-cache
+    plan: free
+    ipAllowList: [] # only reachable from services in this same Render project
+
+databases:
+  - name: url-threat-detection-db
+    plan: free
+    databaseName: url_threat_detection
+    user: url_threat_detection
