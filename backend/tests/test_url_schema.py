@@ -62,9 +62,11 @@ def test_rejects_data_scheme_instead_of_mangling_it() -> None:
 def test_rejects_extremely_long_url() -> None:
     """
     Real bug found via adversarial testing 2026-09-14: a 100k+ character
-    URL passed validation fine, then crashed downstream with DEBUG's raw
-    traceback leaking to the client. Rejecting unreasonable length at the
-    boundary is the first line of defense.
+    URL passed validation fine, then crashed downstream (httpx.InvalidURL)
+    when base64-encoded for the VirusTotal request path - and that crash
+    leaked a raw traceback to the client because DEBUG defaulted to True.
+    Rejecting unreasonable length at the boundary is the first line of
+    defense; the fixes in threat_intel.py and config.py are the others.
     """
     with pytest.raises(ValidationError):
         URLAnalysisRequest(url="http://example.com/" + ("a" * 100_000))
