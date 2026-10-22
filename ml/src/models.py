@@ -98,3 +98,111 @@ def evaluate_model(
     )
 
 
+def train_logistic_regression(X_train, X_test, y_train, y_test) -> ModelMetrics:
+    """Train Logistic Regression baseline."""
+    logger.info("Training Logistic Regression...")
+    y_train_enc, label_map = _encode_labels(y_train.values)
+    y_test_enc = np.array([label_map[y] for y in y_test.values])
+
+    model = LogisticRegression(max_iter=1000, random_state=42, n_jobs=-1)
+    model.fit(X_train, y_train_enc)
+
+    y_pred = model.predict(X_test)
+    y_pred_proba = model.predict_proba(X_test)
+
+    return evaluate_model("Logistic Regression", y_test_enc, y_pred, y_pred_proba)
+
+
+def train_random_forest(X_train, X_test, y_train, y_test) -> ModelMetrics:
+    """Train Random Forest baseline."""
+    logger.info("Training Random Forest...")
+    y_train_enc, label_map = _encode_labels(y_train.values)
+    y_test_enc = np.array([label_map[y] for y in y_test.values])
+
+    model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+    model.fit(X_train, y_train_enc)
+
+    y_pred = model.predict(X_test)
+    y_pred_proba = model.predict_proba(X_test)
+
+    logger.info("Top 10 important features:")
+    feature_importance = sorted(
+        zip(X_train.columns, model.feature_importances_),
+        key=lambda x: x[1],
+        reverse=True,
+    )
+    for feat, importance in feature_importance[:10]:
+        logger.info("  %s: %.4f", feat, importance)
+
+    return evaluate_model("Random Forest", y_test_enc, y_pred, y_pred_proba)
+
+
+def train_gradient_boosting(X_train, X_test, y_train, y_test) -> ModelMetrics:
+    """Train Gradient Boosting baseline."""
+    logger.info("Training Gradient Boosting...")
+    y_train_enc, label_map = _encode_labels(y_train.values)
+    y_test_enc = np.array([label_map[y] for y in y_test.values])
+
+    model = GradientBoostingClassifier(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train_enc)
+
+    y_pred = model.predict(X_test)
+    y_pred_proba = model.predict_proba(X_test)
+
+    return evaluate_model("Gradient Boosting", y_test_enc, y_pred, y_pred_proba)
+
+
+def train_svm(X_train, X_test, y_train, y_test) -> ModelMetrics:
+    """Train SVM baseline."""
+    logger.info("Training SVM (this may take a while)...")
+    y_train_enc, label_map = _encode_labels(y_train.values)
+    y_test_enc = np.array([label_map[y] for y in y_test.values])
+
+    model = SVC(kernel="rbf", probability=True, random_state=42)
+    model.fit(X_train, y_train_enc)
+
+    y_pred = model.predict(X_test)
+    y_pred_proba = model.predict_proba(X_test)
+
+    return evaluate_model("SVM", y_test_enc, y_pred, y_pred_proba)
+
+
+def train_baseline_models(X_train, X_test, y_train, y_test) -> dict:
+    """Train all baseline models and return results."""
+    results = {}
+
+    results["logistic_regression"] = train_logistic_regression(X_train, X_test, y_train, y_test)
+    results["random_forest"] = train_random_forest(X_train, X_test, y_train, y_test)
+    results["gradient_boosting"] = train_gradient_boosting(X_train, X_test, y_train, y_test)
+    results["svm"] = train_svm(X_train, X_test, y_train, y_test)
+
+    return results
+
+
+if __name__ == "__main__":
+    from pathlib import Path
+
+    from src.preprocessing import prepare_training_data
+
+    processed_dir = Path(__file__).resolve().parent.parent / "data" / "processed"
+    input_file = processed_dir / "urls_enriched.csv"
+
+    X_train, X_test, y_train, y_test = prepare_training_data(input_file)
+
+    results = train_baseline_models(X_train, X_test, y_train, y_test)
+
+    print("\n" + "=" * 60)
+    print("BASELINE MODEL RESULTS")
+    print("=" * 60)
+    for name, metrics in results.items():
+        print(f"\n{metrics.model_name}:")
+        print(f"  Accuracy:  {metrics.accuracy:.4f}")
+        print(f"  Precision: {metrics.precision:.4f}")
+        print(f"  Recall:    {metrics.recall:.4f}")
+        print(f"  F1-Score:  {metrics.f1:.4f}")
+        print(f"  ROC-AUC:   {metrics.roc_auc:.4f}")
+
+    best_model = max(results.items(), key=lambda x: x[1].f1)
+    print(f"\n{'=' * 60}")
+    print(f"Best model (by F1): {best_model[1].model_name}")
+    print(f"{'=' * 60}")
