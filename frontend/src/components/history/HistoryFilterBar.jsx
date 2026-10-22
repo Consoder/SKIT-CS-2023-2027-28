@@ -19,7 +19,7 @@ export function filterScans(scans, { query, verdict, days }) {
 
   return scans.filter((scan) => {
     const matchesText = !text || scan.url.toLowerCase().includes(text);
-    const matchesVerdict = verdict === 'All' || scan.verdict === verdict;
+    const matchesVerdict = verdict === 'All' || String(scan.verdict).toLowerCase() === verdict.toLowerCase();
     const matchesDate = !cutoff || new Date(scan.scannedAt).getTime() >= cutoff;
     return matchesText && matchesVerdict && matchesDate;
   });
@@ -91,4 +91,4 @@ export default function HistoryFilterBar({ filters, onChange, total = 0, shown =
       </p>
     </div>
   );
-}
+} 
