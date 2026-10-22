@@ -562,10 +562,8 @@ currently) and remain so.
 - [x] Sprint 3.1 — FastAPI skeleton, config, CORS, base routing
 - [x] Sprint 3.2 — URL validation & request/response schemas (due 30-09-2026)
 - [x] Sprint 3.3 — Orchestration service (due 25-10-2026)
-- [x] Sprint 3.4 — Unified `/analyze` endpoint + integration tests (due 20-11-2026)
-- [x] Sprint 6.1 — VirusTotal / AbuseIPDB integration (due 15-12-2026)
-- [x] Sprint 6.2 — Redis caching layer (due 15-01-2027)
-- [x] Sprint 6.3 — PostgreSQL schema & indexing (due 10-02-2027)
-- [x] Sprint 6.4 — Blockchain audit logging + Docker + CI/CD (due 10-03-2027)
-
-**Backend: 8/8 Sprint 3 & 6 tasks complete.**
+- [ ] Sprint 3.4 — Unified `/analyze` endpoint + integration tests (due 20-11-2026)
+- [ ] Sprint 6.1 — VirusTotal / AbuseIPDB integration (due 15-12-2026)
+- [ ] Sprint 6.2 — Redis caching layer (due 15-01-2027)
+- [ ] Sprint 6.3 — PostgreSQL schema & indexing (due 10-02-2027)
+- [ ] Sprint 6.4 — Blockchain audit logging + Docker + CI/CD (due 10-03-2027)
