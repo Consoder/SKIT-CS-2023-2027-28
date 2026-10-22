@@ -42,6 +42,7 @@ tests/
   test_analysis_schema.py
   test_analyze_endpoint.py
   test_auth.py
+  test_dns_enrichment.py
   test_blockchain.py
   test_cache.py
   test_db_models.py
