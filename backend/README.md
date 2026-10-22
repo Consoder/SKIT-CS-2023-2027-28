@@ -8,57 +8,58 @@ Task 2 (URL validation & request/response schemas, structured error handling).
 
 ```
 app/
-  main.py              # app factory, CORS, router mount, error handler registration
-  core/
-    config.py          # pydantic-settings based Settings (.env driven)
-    logging.py         # stdout logging config
-    errors.py          # structured error responses (AppError, validation, unhandled)
-  schemas/
-    url.py             # URLAnalysisRequest — validates/normalizes submitted URLs
-    analysis.py        # URLAnalysisResponse — verdict, risk score, evidence
-  services/
-    orchestrator.py    # AnalysisOrchestrator — coordinates features + threat intel + classifier + cache
-    threat_intel.py    # real VirusTotal + AbuseIPDB client — retries, rate-limit backoff, degrades safely
-    cache.py           # Redis caching layer — repeat lookups skip the pipeline entirely
-  db/
-    models.py          # Users, URL_Analysis, Threat_Intelligence, Audit_Logs — normalized + indexed
-    session.py         # async engine/session factory (Postgres in prod, SQLite in tests)
-  services/
-    blockchain.py      # BlockchainAuditLogger — anchors result hashes on-chain, degrades safely
+  main.py
   api/v1/
-    api.py             # aggregates versioned routers
+    api.py
     endpoints/
-      health.py         # GET /api/v1/health
-<<<<<<< HEAD
+      analyze.py         # POST /api/v1/analyze
+      health.py          # GET /api/v1/health
+  core/
+    auth.py
+    config.py
+    errors.py
+    logging.py
+    rate_limit.py
+  db/
+    models.py
+    session.py
   schemas/
-    url.py             # request-side URL validation (Sprint 3, Task 2)
-    analysis.py         # response-side schema for scan results
+    analysis.py
+    url.py
   services/
-    orchestrator.py     # feature extraction + threat intel + classification (Sprint 3, Task 3)
-=======
-      analyze.py         # POST /api/v1/analyze — unified verdict endpoint
+    blockchain.py
+    cache.py
+    composite_threat_intel.py
+    dns_enrichment.py   # async DNS lookup: resolvability, A/AAAA, private-IP signal
+    ml_classifier.py
+    ml_features.py
+    orchestrator.py     # coordinates feature extraction, DNS/threat intel, classification, cache and persistence
+    threat_intel.py
 contracts/
-  AuditLog.sol         # Solidity contract — anchors content hashes, real, compiled + deployed live
-  build/               # compiled ABI + bytecode (git-ignored, regenerate via "Blockchain setup" below)
->>>>>>> c21d9f7 (test: add backend tests and CI workflow)
+  AuditLog.sol
+scripts/
 tests/
+  test_analysis_schema.py
+  test_analyze_endpoint.py
+  test_auth.py
+  test_blockchain.py
+  test_cache.py
+  test_db_models.py
+  test_error_handling.py
+  test_feature_extraction.py
+  test_generate_dev_cert.py
   test_health.py
+  test_ml_edge_cases.py
+  test_orchestrator.py
+  test_orchestrator_wiring.py
+  test_threat_intel.py
+  test_threat_intel_stub.py
   test_url_schema.py
   test_url_schema_control_chars.py
   test_url_schema_port.py
-  test_analysis_schema.py
-  test_error_handling.py
-  test_orchestrator.py
-<<<<<<< HEAD
-=======
-  test_analyze_endpoint.py
-  test_threat_intel.py
-  test_cache.py
-  test_db_models.py
-  test_blockchain.py
 Dockerfile
-docker-compose.yml     # backend + Redis + PostgreSQL, full local stack
->>>>>>> c21d9f7 (test: add backend tests and CI workflow)
+docker-compose.yml
+render.yaml
 ```
 
 ## Validation & error handling notes (Sprint 3, Task 2)
@@ -561,13 +562,6 @@ currently) and remain so.
 - [x] Sprint 3.1 — FastAPI skeleton, config, CORS, base routing
 - [x] Sprint 3.2 — URL validation & request/response schemas (due 30-09-2026)
 - [x] Sprint 3.3 — Orchestration service (due 25-10-2026)
-<<<<<<< HEAD
-- [ ] Sprint 3.4 — Unified `/analyze` endpoint + integration tests (due 20-11-2026)
-- [ ] Sprint 6.1 — VirusTotal / AbuseIPDB integration (due 15-12-2026)
-- [ ] Sprint 6.2 — Redis caching layer (due 15-01-2027)
-- [ ] Sprint 6.3 — PostgreSQL schema & indexing (due 10-02-2027)
-- [ ] Sprint 6.4 — Blockchain audit logging + Docker + CI/CD (due 10-03-2027)
-=======
 - [x] Sprint 3.4 — Unified `/analyze` endpoint + integration tests (due 20-11-2026)
 - [x] Sprint 6.1 — VirusTotal / AbuseIPDB integration (due 15-12-2026)
 - [x] Sprint 6.2 — Redis caching layer (due 15-01-2027)
@@ -575,4 +569,3 @@ currently) and remain so.
 - [x] Sprint 6.4 — Blockchain audit logging + Docker + CI/CD (due 10-03-2027)
 
 **Backend: 8/8 Sprint 3 & 6 tasks complete.**
->>>>>>> c21d9f7 (test: add backend tests and CI workflow)
