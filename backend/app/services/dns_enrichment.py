@@ -15,6 +15,7 @@ machinery without any orchestrator changes.
 """
 
 import asyncio
+import ipaddress
 import socket
 from urllib.parse import urlparse
 
@@ -22,23 +23,12 @@ DNS_TIMEOUT_SECONDS = 0.8
 
 
 def _is_private_ip(ip: str) -> bool:
+    """Return whether an IP is private, loopback, or link-local (IPv4 or IPv6)."""
     try:
-        parts = [int(p) for p in ip.split(".")]
-        if len(parts) != 4:
-            return False
-        if parts[0] == 10:
-            return True
-        if parts[0] == 172 and 16 <= parts[1] <= 31:
-            return True
-        if parts[0] == 192 and parts[1] == 168:
-            return True
-        if parts[0] == 127:
-            return True
-        if parts[0] == 169 and parts[1] == 254:
-            return True
+        address = ipaddress.ip_address(ip)
+    except ValueError:
         return False
-    except Exception:
-        return False
+    return address.is_private or address.is_loopback or address.is_link_local
 
 
 def _resolve(domain: str) -> list | None:
@@ -61,7 +51,9 @@ class DnsEnrichmentClient:
     async def check(self, url: str) -> dict:
         try:
             parsed = urlparse(url if "://" in url else f"http://{url}")
-            domain = parsed.netloc.lower()
+            # netloc also contains optional credentials and port; neither is
+            # part of the DNS hostname. .hostname handles both and IPv6 URLs.
+            domain = (parsed.hostname or "").lower()
         except Exception:
             domain = ""
 
@@ -90,11 +82,17 @@ class DnsEnrichmentClient:
         if result:
             is_resolvable = True
             for family, _, _, _, sockaddr in result:
-                if family == socket.AF_INET and not has_a_record:
+                ip = sockaddr[0] if sockaddr else ""
+                if family == socket.AF_INET:
                     has_a_record = True
-                    resolves_to_private_ip = _is_private_ip(sockaddr[0])
+                    # Check every A answer: a public answer must not hide a
+                    # private address returned later in the same DNS response.
+                    if _is_private_ip(ip):
+                        resolves_to_private_ip = True
                 elif family == socket.AF_INET6:
                     has_aaaa_record = True
+                    if _is_private_ip(ip):
+                        resolves_to_private_ip = True
 
         return {
             "is_resolvable": is_resolvable,
