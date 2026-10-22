@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 """
 Sprint 3, Task 3 (Orchestration service — due 25-10-2026): proves
 AnalysisOrchestrator genuinely wires the three stages together end to end,
@@ -8,7 +7,6 @@ not just that each stage is independently correct.
 import pytest
 
 from app.schemas.url import URLAnalysisRequest
-=======
 import asyncio
 
 import pytest
@@ -17,7 +15,6 @@ import pytest_asyncio
 from app.schemas.analysis import URLAnalysisResponse
 from app.schemas.url import URLAnalysisRequest
 from app.services.cache import AnalysisCache
->>>>>>> c21d9f7 (test: add backend tests and CI workflow)
 from app.services.orchestrator import (
     AnalysisOrchestrator,
     PlaceholderClassifier,
@@ -26,7 +23,6 @@ from app.services.orchestrator import (
 )
 
 
-<<<<<<< HEAD
 class TestAnalysisOrchestrator:
     @pytest.mark.asyncio
     async def test_analyze_coordinates_all_three_stages(self):
@@ -76,7 +72,6 @@ class TestAnalysisOrchestrator:
 
         assert response.verdict == "benign"
         assert response.risk_score == 5.0
-=======
 class _FakeRedisClient:
     def __init__(self) -> None:
         self.store: dict[str, str] = {}
@@ -588,4 +583,3 @@ async def test_persistent_db_outage_writes_to_dead_letter_file(tmp_path, monkeyp
     record = json.loads(dead_letter_path.read_text().strip())
     assert record["url"] == "https://example.com/dead-letter-test"
     assert record["verdict"] == response.verdict
->>>>>>> c21d9f7 (test: add backend tests and CI workflow)
