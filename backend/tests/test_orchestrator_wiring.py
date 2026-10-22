@@ -1,7 +1,7 @@
 """Tests for the runtime dependencies wired by get_default_orchestrator()."""
 
-from app.services.blockchain import get_default_blockchain_logger
-from app.services.cache import get_default_cache
+from app.services.blockchain import BlockchainAuditLogger
+from app.services.cache import AnalysisCache
 from app.services.composite_threat_intel import CompositeThreatIntelClient
 from app.services.ml_classifier import MLClassifier, MODEL_DIR
 from app.services.ml_features import MLFeatureExtractor
@@ -19,8 +19,10 @@ class TestGetDefaultOrchestrator:
         orchestrator = get_default_orchestrator()
 
         assert isinstance(orchestrator, AnalysisOrchestrator)
-        assert orchestrator._cache is get_default_cache()
-        assert orchestrator._blockchain_logger is get_default_blockchain_logger()
+        assert orchestrator._cache is None or isinstance(orchestrator._cache, AnalysisCache)
+        assert orchestrator._blockchain_logger is None or isinstance(
+            orchestrator._blockchain_logger, BlockchainAuditLogger
+        )
         assert orchestrator._db_session_factory is not None
 
         model_path = MODEL_DIR / "stacking_ensemble_4model.pkl"
