@@ -396,14 +396,38 @@ def get_default_orchestrator() -> AnalysisOrchestrator:
     from app.services.ml_classifier import MLClassifier, MODEL_DIR
     from app.services.ml_features import MLFeatureExtractor
 
-    if (MODEL_DIR / "stacking_ensemble_4model.pkl").exists():
+    model_path = MODEL_DIR / "stacking_ensemble_4model.pkl"
+    encoders_path = MODEL_DIR / "encoders_bundle.pkl"
+
+    # Both artifacts are required: MLClassifier loads the model and the
+    # encoder bundle during construction. A partial artifact set must fall
+    # back cleanly rather than crashing the API at startup.
+    if model_path.is_file() and encoders_path.is_file():
         feature_extractor: FeatureExtractor = MLFeatureExtractor()
-        classifier: Classifier = MLClassifier()
-        threat_intel_client: ThreatIntelClient = CompositeThreatIntelClient(real_threat_intel)
+        classifier: Classifier = MLClassifier(
+            model_path=model_path,
+            encoders_path=encoders_path,
+        )
+        logger.info("Trained ML model enabled from %s", MODEL_DIR)
     else:
         feature_extractor = PlaceholderFeatureExtractor()
         classifier = PlaceholderClassifier()
-        threat_intel_client = real_threat_intel
+        missing = [
+            str(path.name)
+            for path in (model_path, encoders_path)
+            if not path.is_file()
+        ]
+        logger.warning(
+            "Trained ML model disabled; missing artifacts in %s: %s. "
+            "Using heuristic fallback.",
+            MODEL_DIR,
+            ", ".join(missing),
+        )
+
+    # DNS enrichment is independent of the trained-model artifacts. Always
+    # compose DNS with VirusTotal/AbuseIPDB so DNS features are still present
+    # during local development and the heuristic fallback path.
+    threat_intel_client: ThreatIntelClient = CompositeThreatIntelClient(real_threat_intel)
 
     # DB persistence (Sprint 6, Task 3 wiring, closed 2026-09-25): the
     # engine is created lazily (SQLAlchemy doesn't actually connect until
