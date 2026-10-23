@@ -228,7 +228,9 @@ class AnalysisOrchestrator:
             cached = await self._cache.get(request.url)
             if cached is not None:
                 cached_threat_intel = cached.evidence.get("threat_intel", {})
-                if _REQUIRED_DNS_EVIDENCE_KEYS.issubset(cached_threat_intel):
+                if isinstance(cached_threat_intel, dict) and _REQUIRED_DNS_EVIDENCE_KEYS.issubset(
+                    cached_threat_intel
+                ):
                     # Known limitation, not fixed here (out of scope for the
                     # auth work that added user_id): a cache hit returns
                     # instantly without persisting, same as before user
