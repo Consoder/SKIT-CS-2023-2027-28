@@ -1,6 +1,5 @@
 """Tests for runtime dependencies wired by get_default_orchestrator()."""
 
-import asyncio
 import socket
 
 import pytest
