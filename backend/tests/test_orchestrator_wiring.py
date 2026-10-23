@@ -51,6 +51,22 @@ class TestGetDefaultOrchestrator:
             assert isinstance(orchestrator._classifier, PlaceholderClassifier)
 
 
+def test_partial_model_artifacts_fall_back_safely(monkeypatch, tmp_path, caplog):
+    """One model artifact alone must not crash startup or disable DNS."""
+    from app.services import ml_classifier
+
+    monkeypatch.setattr(ml_classifier, "MODEL_DIR", tmp_path)
+    (tmp_path / "stacking_ensemble_4model.pkl").touch()
+
+    orchestrator = get_default_orchestrator()
+
+    assert isinstance(orchestrator._feature_extractor, PlaceholderFeatureExtractor)
+    assert isinstance(orchestrator._classifier, PlaceholderClassifier)
+    assert isinstance(orchestrator._threat_intel_client, CompositeThreatIntelClient)
+    assert isinstance(orchestrator._threat_intel_client._dns_client, DnsEnrichmentClient)
+    assert "encoders_bundle.pkl" in caplog.text
+
+
 @pytest.mark.asyncio
 async def test_composite_threat_intel_merges_dns_and_provider_results(monkeypatch):
     """DNS fields remain available even when the trained ML model is absent."""
