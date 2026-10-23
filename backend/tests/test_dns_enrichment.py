@@ -1,6 +1,5 @@
 """Unit tests for the backend DNS enrichment signal."""
 
-import asyncio
 import socket
 import time
 
