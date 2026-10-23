@@ -8,3 +8,7 @@ venv/
 contracts/build/
 certs/
 data/db_dead_letter.jsonl
+
+# Trained ML artifacts are large binary files and must be provisioned locally
+# (or via the deployment's model-artifact store), not committed to Git.
+app/ml_models/*.pkl
