@@ -92,32 +92,37 @@ own validation scope:
   own `.port` property already raises `ValueError` for exactly these
   cases - it just needed to be accessed at all, which it wasn't.
 
-## Orchestration service (Sprint 3, Task 3)
+## Orchestration, ML and DNS integration
 
-`app/services/orchestrator.py` coordinates feature extraction,
-threat-intelligence and classification behind one `AnalysisOrchestrator.
-analyze()` call. Each stage is a small `Protocol` (`FeatureExtractor`,
-`ThreatIntelClient`, `Classifier`) with a placeholder implementation for
-now:
+`app/services/orchestrator.py` coordinates URL features, threat intelligence,
+classification, caching, request coalescing and optional persistence behind
+one `AnalysisOrchestrator.analyze()` call.
 
-- `PlaceholderFeatureExtractor` — lexical checks only (URL length,
-  IPv4/IPv6-literal host, subdomain count, userinfo-disguise, punycode
-  homograph detection).
-- `PlaceholderThreatIntelClient` — always reports "unknown"; replaced by
-  the real VirusTotal/AbuseIPDB client in Sprint 6, Task 1.
-- `PlaceholderClassifier` — heuristic rules over the extracted features,
-  already reading the `virustotal`/`abuseipdb` keys the real threat-intel
-  client will populate later, so that swap needs no change here.
+- **Feature extraction/classification:** when both
+  `app/ml_models/stacking_ensemble_4model.pkl` and
+  `app/ml_models/encoders_bundle.pkl` exist, the runtime uses
+  `MLFeatureExtractor` and `MLClassifier`. If either artifact is missing,
+  it logs a warning and falls back to `PlaceholderFeatureExtractor` and
+  `PlaceholderClassifier`; the API can still start.
+- **Threat intelligence + DNS:** `CompositeThreatIntelClient` is always
+  wired into the orchestrator. It runs the real VirusTotal/AbuseIPDB client
+  and `DnsEnrichmentClient` concurrently, then merges their result fields.
+  DNS enrichment therefore remains active even when trained-model artifacts
+  are unavailable, and DNS fields are supplied to `MLClassifier` when the
+  trained model is enabled.
+- **DNS timeout and safe fallback:** DNS lookup is offloaded from the event
+  loop and bounded by a timeout. A lookup failure returns false-valued DNS
+  flags rather than failing the entire analysis request.
+- **Runtime verification:** `tests/test_dns_enrichment.py` covers DNS parsing,
+  address classification, record flags, malformed URLs and timeout fallback.
+  `tests/test_orchestrator_wiring.py` verifies DNS remains wired in both the
+  trained-model and heuristic-fallback configurations.
 
-Deliberately out of scope for this task (each is its own later sprint,
-and would be premature against placeholder dependencies that can't
-actually hang or need caching): the real ML model (Sprint 4), the real
-threat-intel client's per-provider timeout (Sprint 6, Task 1), the Redis
-cache (Sprint 6, Task 2), and DB persistence (Sprint 6, Task 3).
-
-`get_default_orchestrator()` wires the placeholders today; later sprints
-swap in the real dependencies there without changing `analyze()`'s call
-sites.
+**Model artifact requirement:** the trained model is not activated by Python
+code alone. Both serialized files must be supplied at
+`app/ml_models/`; they are not included in the repository. Without them,
+responses intentionally use the heuristic fallback rather than claiming
+trained-model inference occurred.
 
 ## Local setup
 
