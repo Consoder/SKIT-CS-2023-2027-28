@@ -12,9 +12,11 @@ import pytest
 
 from app.services.ml_classifier import MODEL_DIR
 
+_MODEL_PATH = MODEL_DIR / "stacking_ensemble_4model.pkl"
+_ENCODERS_PATH = MODEL_DIR / "encoders_bundle.pkl"
 pytestmark = pytest.mark.skipif(
-    not (MODEL_DIR / "stacking_ensemble_4model.pkl").exists(),
-    reason="real model files not present locally",
+    not (_MODEL_PATH.is_file() and _ENCODERS_PATH.is_file()),
+    reason="trained model and encoder artifacts not both present locally",
 )
 
 
