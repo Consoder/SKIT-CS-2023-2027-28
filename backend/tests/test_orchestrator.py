@@ -211,7 +211,19 @@ async def test_cache_hit_skips_the_pipeline_entirely() -> None:
 
     cache = AnalysisCache(_FakeRedisClient(), ttl_seconds=60)
     cached_response = URLAnalysisResponse(
-        url="https://example.com", verdict="malware", risk_score=95.0, evidence={"cached": True}
+        url="https://example.com",
+        verdict="malware",
+        risk_score=95.0,
+        evidence={
+            "cached": True,
+            "threat_intel": {
+                "is_resolvable": True,
+                "has_a_record": True,
+                "has_aaaa_record": False,
+                "has_mx_record": False,
+                "resolves_to_private_ip": False,
+            },
+        },
     )
     await cache.set("https://example.com", cached_response)
 
@@ -268,6 +280,49 @@ async def test_slow_classification_does_not_block_other_requests() -> None:
     # overhead. A generous threshold well below the serialized time proves
     # the requests actually overlapped rather than queuing.
     assert elapsed < SLEEP_SECONDS * (CONCURRENT_REQUESTS / 2)
+
+
+@pytest.mark.asyncio
+async def test_stale_cache_without_dns_evidence_is_recomputed() -> None:
+    cache = AnalysisCache(_FakeRedisClient(), ttl_seconds=60)
+    url = "https://example.com/stale-dns-cache"
+    stale_response = URLAnalysisResponse(
+        url=url,
+        verdict="malware",
+        risk_score=99.0,
+        evidence={"features": {"stale": True}, "threat_intel": {"source": "old-cache"}},
+    )
+    await cache.set(url, stale_response)
+
+    call_count = {"n": 0}
+
+    class DNSReadyThreatIntelClient:
+        async def check(self, checked_url: str) -> dict:
+            call_count["n"] += 1
+            assert checked_url == url
+            return {
+                "source": "virustotal+abuseipdb",
+                "is_resolvable": True,
+                "has_a_record": True,
+                "has_aaaa_record": False,
+                "has_mx_record": False,
+                "resolves_to_private_ip": False,
+            }
+
+    orchestrator = AnalysisOrchestrator(
+        feature_extractor=PlaceholderFeatureExtractor(),
+        threat_intel_client=DNSReadyThreatIntelClient(),
+        classifier=PlaceholderClassifier(),
+        cache=cache,
+    )
+    response = await orchestrator.analyze(URLAnalysisRequest(url=url))
+
+    assert call_count["n"] == 1
+    assert response.verdict == "benign"
+    assert response.evidence["threat_intel"]["is_resolvable"] is True
+    refreshed = await cache.get(url)
+    assert refreshed is not None
+    assert refreshed.evidence["threat_intel"]["has_a_record"] is True
 
 
 @pytest.mark.asyncio
