@@ -236,7 +236,8 @@ async def test_cache_hit_skips_the_pipeline_entirely() -> None:
     response = await orchestrator.analyze(URLAnalysisRequest(url="https://example.com"))
 
     assert response.verdict == "malware"
-    assert response.evidence == {"cached": True}
+    assert response.evidence["cached"] is True
+    assert "is_resolvable" in response.evidence["threat_intel"]
 
 
 @pytest.mark.asyncio
