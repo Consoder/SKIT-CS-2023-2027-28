@@ -65,6 +65,17 @@ DB_RETRY_ATTEMPTS = 3
 DB_RETRY_BACKOFF_SECONDS = 0.5
 DEAD_LETTER_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "db_dead_letter.jsonl"
 
+# Older cached responses were generated before DNS enrichment was always
+# wired into the pipeline. Treat those entries as cache misses so a fresh
+# request can add the DNS signals instead of returning stale evidence.
+_REQUIRED_DNS_EVIDENCE_KEYS = frozenset({
+    "is_resolvable",
+    "has_a_record",
+    "has_aaaa_record",
+    "has_mx_record",
+    "resolves_to_private_ip",
+})
+
 logger = logging.getLogger(__name__)
 
 
@@ -216,18 +227,25 @@ class AnalysisOrchestrator:
         if self._cache is not None:
             cached = await self._cache.get(request.url)
             if cached is not None:
-                # Known limitation, not fixed here (out of scope for the
-                # auth work that added user_id): a cache hit returns
-                # instantly without persisting, same as before user
-                # attribution existed. If user B requests a URL user A
-                # already caused to be cached, user B gets the correct
-                # answer but no row is written for user B specifically -
-                # it won't show up in a future "my scan history" for user
-                # B. Fixing this would mean writing a DB row on every
-                # request regardless of cache status, which changes the
-                # cache's performance characteristics and is a bigger,
-                # separate design decision.
-                return cached
+                cached_threat_intel = cached.evidence.get("threat_intel", {})
+                if _REQUIRED_DNS_EVIDENCE_KEYS.issubset(cached_threat_intel):
+                    # Known limitation, not fixed here (out of scope for the
+                    # auth work that added user_id): a cache hit returns
+                    # instantly without persisting, same as before user
+                    # attribution existed. If user B requests a URL user A
+                    # already caused to be cached, user B gets the correct
+                    # answer but no row is written for user B specifically -
+                    # it won't show up in a future "my scan history" for user
+                    # B. Fixing this would mean writing a DB row on every
+                    # request regardless of cache status, which changes the
+                    # cache's performance characteristics and is a bigger,
+                    # separate design decision.
+                    return cached
+
+                logger.info(
+                    "ignoring cached analysis without DNS evidence for %s; recomputing",
+                    request.url,
+                )
 
         # Same limitation applies to in-flight coalescing just below: if
         # two different users request the same not-yet-cached URL at the
