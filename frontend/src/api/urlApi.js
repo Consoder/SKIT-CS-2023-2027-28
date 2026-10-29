@@ -1,5 +1,6 @@
 import { demoAnalyze } from '../lib/demoEngine';
 import axiosClient from './axiosClient';
+import { withRetry } from './retry';
 
 // Analyzes one URL. Both paths resolve to the same response shape:
 //   { url, verdict, risk_score, evidence }
@@ -21,7 +22,9 @@ export async function checkHealth({ baseUrl, signal } = {}) {
 }
 
 // Fetches server-side scan history once the backend exposes it (Sprint 6.3).
+// A read-only GET, so transient failures are retried (up to 2 extra attempts).
+// /analyze is deliberately NOT retried: it writes an audit record each time.
 export async function getUrlHistory({ baseUrl, signal } = {}) {
-  const response = await axiosClient.get('/history', { baseURL: baseUrl, signal });
+  const response = await withRetry(() => axiosClient.get('/history', { baseURL: baseUrl, signal }), { signal });
   return response.data;
 }
