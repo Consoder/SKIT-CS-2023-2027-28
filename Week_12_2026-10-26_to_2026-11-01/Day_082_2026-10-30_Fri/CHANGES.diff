@@ -1,0 +1,12 @@
+--- a/backend/tests/test_analyze_endpoint.py
++++ b/backend/tests/test_analyze_endpoint.py
+@@ -37,3 +37,9 @@
+     assert body["verdict"] in ("benign", "phishing", "malware", "suspicious")
+     assert 0 <= body["risk_score"] <= 100
+     assert "features" in body["evidence"]
++
++
++def test_analyze_ip_url_flagged_suspicious() -> None:
++    response = client.post("/api/v1/analyze", json={"url": "http://192.168.1.1/login"})
++    assert response.status_code == 200
++    assert response.json()["verdict"] == "suspicious"

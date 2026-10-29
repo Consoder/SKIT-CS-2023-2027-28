@@ -1,0 +1,42 @@
+--- /dev/null
++++ b/backend/tests/test_analyze_endpoint.py
+@@ -0,0 +1,39 @@
++import pytest
++from fastapi.testclient import TestClient
++
++from app.api.v1.endpoints.analyze import get_orchestrator
++from app.main import app
++from app.services.orchestrator import (
++    AnalysisOrchestrator,
++    PlaceholderClassifier,
++    PlaceholderFeatureExtractor,
++    PlaceholderThreatIntelClient,
++)
++
++client = TestClient(app)
++
++
++@pytest.fixture(autouse=True)
++def _use_placeholder_orchestrator():
++    """
++    Endpoint tests should stay fast and hermetic regardless of whatever the
++    app wires in by default - pin /analyze to the placeholder pipeline.
++    """
++    app.dependency_overrides[get_orchestrator] = lambda: AnalysisOrchestrator(
++        feature_extractor=PlaceholderFeatureExtractor(),
++        threat_intel_client=PlaceholderThreatIntelClient(),
++        classifier=PlaceholderClassifier(),
++    )
++    yield
++    app.dependency_overrides.pop(get_orchestrator, None)
++
++
++def test_analyze_valid_url_returns_verdict() -> None:
++    response = client.post("/api/v1/analyze", json={"url": "https://example.com"})
++    assert response.status_code == 200
++
++    body = response.json()
++    assert body["url"] == "https://example.com"
++    assert body["verdict"] in ("benign", "phishing", "malware", "suspicious")
++    assert 0 <= body["risk_score"] <= 100
++    assert "features" in body["evidence"]
