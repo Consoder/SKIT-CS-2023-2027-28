@@ -4,9 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { SourceBadge, VerdictBadge } from '../components/Badges';
 import Button, { ButtonLink } from '../components/Button';
 import { EmptyState, PageHeader } from '../components/Common';
+import { DATE_RANGES } from '../components/history/HistoryFilterBar';
 import Input from '../components/Input';
 import { RiskMeter } from '../components/RiskGauge';
 import { RISK_LEVELS, VERDICT_ORDER, VERDICTS } from '../config/verdicts';
+import { isWithinDays } from '../lib/dateRange';
 import { exportCsv, exportJson } from '../lib/exporters';
 import { formatDateTime, truncateMiddle } from '../lib/format';
 import { useAppStore } from '../store/appStoreContext';
@@ -41,6 +43,7 @@ export default function History() {
   const [query, setQuery] = useState('');
   const [verdicts, setVerdicts] = useState([]);
   const [risk, setRisk] = useState('all');
+  const [days, setDays] = useState(null);
   const [sort, setSort] = useState('newest');
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState(() => new Set());
@@ -51,8 +54,9 @@ export default function History() {
       .filter((scan) => !q || scan.url.toLowerCase().includes(q) || scan.ip?.address?.includes(q))
       .filter((scan) => !verdicts.length || verdicts.includes(scan.verdict))
       .filter((scan) => risk === 'all' || scan.riskLevel === risk)
+      .filter((scan) => isWithinDays(scan.scannedAt, days))
       .sort(SORTS[sort]);
-  }, [scans, query, verdicts, risk, sort]);
+  }, [scans, query, verdicts, risk, days, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount - 1);
@@ -151,7 +155,22 @@ export default function History() {
             );
           })}
         </div>
-        <div className="flex gap-2 lg:ml-auto">
+        <div className="flex flex-wrap gap-2 lg:ml-auto">
+          <label className="sr-only" htmlFor="date-filter">
+            Date range
+          </label>
+          <select
+            id="date-filter"
+            value={days ?? ''}
+            onChange={(event) => resetPage(setDays)(event.target.value ? Number(event.target.value) : null)}
+            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none"
+          >
+            {DATE_RANGES.map(({ label, days: value }) => (
+              <option key={label} value={value ?? ''}>
+                {label}
+              </option>
+            ))}
+          </select>
           <label className="sr-only" htmlFor="risk-filter">
             Risk level
           </label>
