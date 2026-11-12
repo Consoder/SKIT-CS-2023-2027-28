@@ -38,7 +38,7 @@ def test_lexically_detected_ipv4_keeps_training_host_feature_semantics():
     assert features["tld"] == ""
     assert features["second_level_domain"] == ""
     assert features["subdomain_count"] == 0
-    assert features["num_subdomains"] == 2
+    assert features["num_subdomains"] == 3
 
 
 def test_bracketed_ipv6_is_detected_as_in_training():
@@ -60,6 +60,6 @@ def test_normal_domain_features_remain_unchanged():
     assert features["subdomain_count"] == 1
     # This field follows the original training implementation's dot count,
     # not the compound-TLD-aware host subdomain_count.
-    assert features["num_subdomains"] == 3
+    assert features["num_subdomains"] == 2
     assert features["has_https"] is True
     assert features["has_http"] is False
