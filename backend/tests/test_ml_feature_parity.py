@@ -102,9 +102,9 @@ def test_userinfo_signal_is_derived_from_the_actual_parsed_authority():
 
     assert features is not None
     assert features["has_userinfo"] is True
-    # The parsed authority remains the model's host input; this signal is
-    # separate and is used only for verdict sub-categorization.
-    assert features["second_level_domain"] == "evil"
+    # Keep the trained extractor's netloc-based feature semantics unchanged;
+    # has_userinfo is a separate derived signal for verdict sub-categorization.
+    assert features["second_level_domain"] == "com@evil"
     assert features["tld"] == "example"
 
     ordinary_url = "https://evil.example/login"
