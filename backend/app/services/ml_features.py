@@ -9,7 +9,6 @@ byte-for-byte identical to what the model was actually trained on -
 verified live against ml/'s own test suite's expected values.
 """
 
-import ipaddress
 import re
 from collections import Counter
 from urllib.parse import urlparse
@@ -36,18 +35,16 @@ def _entropy(value: str) -> float:
 
 
 def _is_ipv4(domain: str) -> bool:
-    try:
-        return isinstance(ipaddress.ip_address(domain), ipaddress.IPv4Address)
-    except ValueError:
-        return False
+    # Keep identical to ml/src/features.py: this regex is the behaviour
+    # the trained model saw, including its lexical treatment of octets.
+    ipv4_pattern = r"^(\d{1,3}\.){3}\d{1,3}$"
+    return bool(re.match(ipv4_pattern, domain))
 
 
 def _is_ipv6(domain: str) -> bool:
-    stripped = domain.strip("[]")
-    try:
-        return isinstance(ipaddress.ip_address(stripped), ipaddress.IPv6Address)
-    except ValueError:
-        return False
+    # Keep identical to ml/src/features.py so inference matches training.
+    ipv6_pattern = r"^(\[)?[0-9a-fA-F:]+(\])?$"
+    return bool(re.match(ipv6_pattern, domain))
 
 
 def extract_ml_features(url: str) -> dict | None:
