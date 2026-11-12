@@ -63,3 +63,62 @@ def test_normal_domain_features_remain_unchanged():
     assert features["num_subdomains"] == 2
     assert features["has_https"] is True
     assert features["has_http"] is False
+
+
+
+@pytest.mark.parametrize(
+    ("url", "expected_http", "expected_https"),
+    [
+        ("http://example.com/path", True, False),
+        ("https://example.com/path", False, True),
+        ("example.com/path", True, False),
+    ],
+)
+def test_scheme_flags_match_the_parsed_url_scheme(url, expected_http, expected_https):
+    features = extract_ml_features(url)
+    assert features is not None
+    assert features["has_http"] is expected_http
+    assert features["has_https"] is expected_https
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("https://example.com/path", False),
+        ("https://example.com/a;b", True),
+        ('https://example.com/"quoted"', True),
+        ("https://example.com/search?q=a+b", True),
+    ],
+)
+def test_suspicious_character_flag_matches_training_pattern(url, expected):
+    features = extract_ml_features(url)
+    assert features is not None
+    assert features["has_suspicious_chars"] is expected
+
+
+def test_userinfo_signal_is_derived_from_the_actual_parsed_authority():
+    features = extract_ml_features("http://google.com@evil.example/login")
+    assert features is not None
+    assert features["has_userinfo"] is True
+    # Keep the trained extractor's netloc-based feature semantics unchanged;
+    # has_userinfo is a separate derived signal for verdict sub-categorization.
+    assert features["second_level_domain"] == "com@evil"
+    assert features["tld"] == "example"
+
+    ordinary = extract_ml_features("https://evil.example/login")
+    assert ordinary is not None
+    assert ordinary["has_userinfo"] is False
+
+
+def test_punycode_signal_detects_encoded_host_labels_only():
+    features = extract_ml_features("http://xn--pple-43d.com/")
+    assert features is not None
+    assert features["is_punycode"] is True
+
+    ordinary = extract_ml_features("https://apple.com/")
+    assert ordinary is not None
+    assert ordinary["is_punycode"] is False
+
+    path_only = extract_ml_features("https://example.com/xn--pple-43d")
+    assert path_only is not None
+    assert path_only["is_punycode"] is False
